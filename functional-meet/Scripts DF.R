@@ -1,15 +1,12 @@
 #How to simply calculate Petchey and Gaston's Functional Diversity (FD)
-#First, install the picante and ade4 packages
 
-#install.packages("picante")
-#install.packages("ade4")
 library(picante)
 library(ade4)
 library(FD)
 library(ape)
 library(SYNCSA)
 
-comp <- read.csv(here::here("functional-meet", "comm_sbv.csv"), head=T, sep=";") #Load the 'community' file
+comp <- read.csv(here::here("functional-meet", "comm_sbv.csv"), head=T, sep=";", row.names = 1) #Load the 'community' file
 head(comp)
 
 traits<-read.csv(here::here("functional-meet", "traits_sbv.csv"), head=T, sep=";", row.names = 1) # Load the 'traits' file
@@ -19,53 +16,61 @@ traits$leaf_area <- rnorm(53,1.5,0.4)
 traits$sla <- rnorm(53,2.5,0.8)
 str(traits)
 
-#Matriz de dist?ncia
-dist.func<-vegdist(traits,method= "gower")
-dist.func
+#Matriz de distancia
+dist.func <- vegan::vegdist(traits, method= "gower")
 ?vegdist
 
 #Use this distance matrix to construct a dendrogram that represents the similarity/dissimilarity among species according to their ecological traits
-tree<-hclust(dist.func,"average") #Average ? o m?todo UPGMA
+tree <- hclust(dist.func, "average") #Average is UPGMA method
 tree
 plot(tree)
 
 #Now we have to transform the dendrogram into a '.phylo' file
-tree.p<-as.phylo(tree)
+tree.p <- ape::as.phylo(tree)
+?as.phylo
+
 tree.p
-par(mfrow=c(1,1), mai=c(0,1,0,1))
-plot(tree.p, cex=1.0) #cex representa o tamanho da fonte
+par(mai=c(0,1,0,1))
+plot(tree.p, cex=1.0)
 dev.off()
 
 #Finally, calculate the functional diversity for each community (see 'help' to see how to include or not the root of the dendrogram; the default is to include it).
-FD<-pd(comp, tree.p)
-FD #retorna os valores de FD
-plot(FD$SR, FD$PD)
+FD <- picante::pd(comp, tree.p)
+?pd
 
-#write.csv(FD,"fd_result.csv") #Salvar resultado em planilha Excel (.csv)
+FD #retorna os valores de FD
+plot(FD$SR, FD$PD) #SR is richness, PD should be functional diversity
 
 #You can see the values for each community on the column "PD"
 #(this is correct, as Petchey and Gaston's FD is calculated with the same method as Faith's Phylogenetic Diversity - PD).
 #You can also find the species richness ("SR") for each community.
-## ?ndices de diversidade funcional baseados em dist?ncia (veja a ajuda das fun??es para maiores detalhes)
+## indices de diversidade funcional baseados em distancia (veja a ajuda das funcoes para maiores detalhes)
 
-# ?ndice MPD (Webb 2000, Amer Nat; Webb et al. 2002 Ann Rev Ecol Syst):
 
-MPD<-mpd(comp,cophenetic(tree.p))
+# indice MPD (Webb 2000, Amer Nat; Webb et al. 2002 Ann Rev Ecol S --------
+
+MPD <- picante::mpd(comp, stats::cophenetic(tree.p)) #-1 remove a rownames
+?cophenetic
+?mpd
+
 MPD
 
-#MPD.d <- mpd(comp,as.matrix(D)) #A diferen?a ? que a dist?ncia aqui n?o vem da ?rvore filogen?tica (cofen?tica), mas sim da matriz de dist?ncias (fun??o dist.ktab); o ideal ? utilizar as dist?ncias da matriz!
+#A diferenca no caso abaixo e que a distancia aqui nao vem da arvore filogenetica (cofenetica)
+#mas sim da matriz de distancias (funcao dist.ktab);
+#o ideal e utilizar as distancias da matriz!
+
+#MPD.d <- mpd(comp, as.matrix(D)) #nao achei onde está o objeto D
 #MPD.d
 
 #plot(MPD, MPD.d)
 #abline(0, 1, lty=2)
-#write.csv(MPD.d,"mpd_result.csv")
+#plot(FD$SR, MPD.d) #MPD tende a nao ter relacao com riqueza
 
-#plot(FD$SR, MPD.d) #MPD tende a n?o ter rela??o com riqueza
 
-### ?ndice MNTD (Webb 2000, Amer Nat; Webb et al. 2002 Ann Rev Ecol Syst):
+# indice MNTD (Webb 2000, Amer Nat; Webb et al. 2002 Ann Rev Ecol  --------
 
 #MNTD<-mntd(comp,cophenetic(tree.p))
-#MNTD.d<-mntd(comp,as.matrix(D)) #MNTD funcional pode ser interessante para casos em que h? invas?o por esp?cies e se quer saber se invasoras s?o similares ?s nativas (aumentam ou n?o espa?o funcional)
+#MNTD.d<-mntd(comp,as.matrix(D)) #MNTD funcional pode ser interessante para casos em que ha invasao por especies e se quer saber se invasoras sao similares as nativas (aumentam ou nao espaco funcional)
 #MNTD.d
 
 #plot(MNTD, MNTD.d)
@@ -76,20 +81,19 @@ MPD
 #MNTD.d <-data.frame(MNTD.d)
 #colnames(MNTD.d ) <- "MNTD.d"
 
-#write.csv(MNTD.d,"mntd_result.csv")
-
-## A fun??o "dbFD" do pacote "FD" permite calcular v?rios ?ndices de diversidade funcional baseados em dist?ncia (e CWM) em uma s? linha de comando.
- # Antes de mais nada, ler "Details" na ajuda da fun??o.
+## A funcao "dbFD" do pacote "FD" permite calcular varios indices de diversidade funcional baseados em distancia (e CWM) em uma so linha de comando.
+# Antes de mais nada, ler "Details" na ajuda da funcao.
 
 ?dbFD
 fix(comp)
-# FRic (Cornwell et al. 2006, Ecology; Vill?ger et al. 2008 Ecology)
-# FEve (Vill?ger et al. 2008, Ecology)
-# FDiv (Vill?ger et al. 2008, Ecology)
-# FDis (Lalibert? & Legendre 2010, Ecology)
-# Rao, Q (Botta-Duk?t 2005, J Veg Sci)
 
-DBFD<-dbFD(D,comp, m=10, print.pco = T, corr = c("cailliez")) #A fun??o dbFD trabalha com matrizes de dist?ncias do tipo euclidiano. Como "dist.func" foi criada a partir do m?todo de Pavoine et al. 2008 ("Gower generalizado"), ent?o aqui foi necess?rio fazer uma corre??o da matriz de dist?ncia para transform?-la em euclidiana. Ver outras op??es de corre??o em "Details" da ajuda da fun??o.
+# FRic (Cornwell et al. 2006, Ecology; Villeger et al. 2008 Ecology)
+# FEve (Villeger et al. 2008, Ecology)
+# FDiv (Villeger et al. 2008, Ecology)
+# FDis (Lalibert? & Legendre 2010, Ecology)
+# Rao, Q (Botta-Dukat 2005, J Veg Sci)
+
+DBFD<-dbFD(D,comp, m=10, print.pco = T, corr = c("cailliez")) #A funcao dbFD trabalha com matrizes de distancias do tipo euclidiano. Como "dist.func" foi criada a partir do metodo de Pavoine et al. 2008 ("Gower generalizado"), entao aqui foi necessario fazer uma correcao da matriz de distancia para transforma-la em euclidiana. Ver outras opcoes de correcao em "Details" da ajuda da funcao.
 
 DBFD
 
@@ -101,12 +105,6 @@ DBFD$FEve
 DBFD$FDiv
 DBFD$RaoQ
 DBFD$FDis
-
-#write.csv(DBFD$FRic,"FRic_result.csv")
-#write.csv(DBFD$FEve,"FEve_result.csv")
-#write.csv(DBFD$FDiv,"FDiv_result.csv")
-#write.csv(DBFD$RaoQ,"RaoQ_result.csv")
-#write.csv(DBFD$FDis,"FDis_result.csv")
 
 DBFD$nbsp #vector listing the number of species in each community
 DBFD$qual.FRic #quality of the reduced-space representation required to compute FRic and FDiv.
