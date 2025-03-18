@@ -6,24 +6,18 @@
 library(picante)
 library(ade4)
 library(FD)
-library(vegan)
 library(ape)
 library(SYNCSA)
 
-comp<-read.csv("comm_sbv.csv", head=T, sep=";") #Load the 'community' file
-traits<-read.csv("traits_sbv.csv", head=T, sep=";") # Load the 'traits' file
-comp
-traits
-leaf_area <- rnorm(53,1.5,0.4)
-leaf_area
-traits$leaf_area2 <- leaf_area
-sla <- rnorm(53,2.5,0.8)
-traits$sla2 <- sla
-str(traits)
-traits <-traits[,c(2:6)]
+comp <- read.csv(here::here("functional-meet", "comm_sbv.csv"), head=T, sep=";") #Load the 'community' file
+head(comp)
+
+traits<-read.csv(here::here("functional-meet", "traits_sbv.csv"), head=T, sep=";", row.names = 1) # Load the 'traits' file
 head(traits)
-traits
-row.names(traits) <-traits$genus_sp
+
+traits$leaf_area <- rnorm(53,1.5,0.4)
+traits$sla <- rnorm(53,2.5,0.8)
+str(traits)
 
 #Matriz de dist?ncia
 dist.func<-vegdist(traits,method= "gower")
